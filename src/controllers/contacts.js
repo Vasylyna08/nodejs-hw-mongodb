@@ -9,6 +9,8 @@ import {
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
 import { parseSortParams } from '../utils/parseSortParams.js';
 import { parseFilterParams } from '../utils/parseFilterParams.js';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
 
 export const getAllContactsController = async (req, res) => {
   const { page, perPage } = parsePaginationParams(req.query);
@@ -37,11 +39,6 @@ export const getContactByIdController = async (req, res) => {
     throw createHttpError(404, 'Contact not found');
   }
 
-  // if (contact.userId.toString() !== req.user.id.toString()) {
-  //   // return next(new createHttpError.Forbidden("Contact is forbidden"));
-  //   throw createHttpError(404, 'Contact not found');
-  // }
-
   res.status(200).json({
     status: 200,
     message: `Successfully found contact with id ${contactId}!`,
@@ -50,6 +47,18 @@ export const getContactByIdController = async (req, res) => {
 };
 
 export const createContactController = async (req, res) => {
+  const photo = req.file;
+
+  let photoUrl;
+
+  if (photo) {
+    if (process.env.ENABLE_CLOUDINARY === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
   const contact = {
     name: req.body.name,
     phoneNumber: req.body.phoneNumber,
@@ -57,6 +66,7 @@ export const createContactController = async (req, res) => {
     isFavourite: req.body.isFavourite,
     contactType: req.body.contactType,
     userId: req.user._id,
+    photo: photoUrl,
   };
   const createdContact = await createContact(contact);
 
@@ -82,12 +92,25 @@ export const patchContactController = async (req, res) => {
   const { contactId } = req.params;
   const userId = req.user._id;
 
+  const photo = req.file;
+
+  let photoUrl;
+
+  if (photo) {
+    if (process.env.ENABLE_CLOUDINARY === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
   const contact = {
     name: req.body.name,
     phoneNumber: req.body.phoneNumber,
     email: req.body.email,
     isFavourite: req.body.isFavourite,
     contactType: req.body.contactType,
+    photo: photoUrl,
   };
 
   const result = await updateContact(contactId, userId, contact);
