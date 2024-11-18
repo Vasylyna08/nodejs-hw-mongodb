@@ -11,7 +11,7 @@ tags:
     description: Operations about contacts.
 servers:
   - url: http://localhost:3000
-  - url: https://hw7-swagger-jyot.onrender.com
+  - url: https://hw7-swagger2.onrender.com
 paths:
   /contacts:
     post:
